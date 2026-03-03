@@ -1,0 +1,17 @@
+{
+  "db": {
+    "host": "localhost",
+    "port": 27017,
+    "database": "psychology_search",
+    "collection": "documents"
+  },
+  "logic": {
+    "max_pages": 50000,
+    "user_agent": "DocumentSearchBot/1.0"
+  },
+  "sources": [
+    {
+      "start_url": "https://ru.wikipedia.org/wiki/Категория:Психология"
+    }
+  ]
+}

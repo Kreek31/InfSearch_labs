@@ -19,7 +19,7 @@ db = client[db_conf["database"]]
 collection = db[db_conf["collection"]]
 
 headers = {"User-Agent": logic["user_agent"]}
-
+doc_id = 0
 
 
 def rebuild_queue_from_db():
@@ -29,6 +29,9 @@ def rebuild_queue_from_db():
     cursor = collection.find({}, {"normalized_url": 1, "raw_html": 1})
 
     for doc in cursor:
+        if doc["_id"] > doc_id:
+            doc_id = doc["_id"] + 1
+
         visited.add(doc["normalized_url"])
         links = get_links(doc["raw_html"])
         for link in links:
@@ -68,6 +71,7 @@ def parse():
             collection.update_one(
                 {"normalized_url": norm_url},
                 {"$set": {
+                    "_id": doc_id,
                     "url": url,
                     "normalized_url": norm_url,
                     "title": title,
@@ -78,6 +82,7 @@ def parse():
                 },
                 upsert=True
             )
+            doc_id += 1
 
             visited.add(norm_url)
 

@@ -110,14 +110,14 @@ void analyze_mongo_index(BooleanIndex* index) {
         
         if (max_index >= 0 && current_max > 0) {
             printf("  %s: %d documents\n", index->terms[max_index].term, current_max);
-            index->terms[max_index].doc_frequency = -current_max; // Временно помечаем как использованный
+            index->terms[max_index].doc_frequency *= -1; // Временно помечаем как использованный
         }
     }
     
     // Восстанавливаем частоты
     for (int i = 0; i < total_terms; i++) {
         if (index->terms[i].doc_frequency < 0) {
-            index->terms[i].doc_frequency = -index->terms[i].doc_frequency;
+            index->terms[i].doc_frequency *= -1;
         }
     }
 }
@@ -155,6 +155,51 @@ void test_performance(BooleanSearch* search_obj) {
     }
 }
 
+
+void tokens_to_file(BooleanIndex* index){
+    printf("\nLoading tokens statistics to file cipf.csv\n");
+    FILE* f = fopen("cipf.csv", "w");
+    if (!f) {
+        perror("Cannot open file");
+        return;
+    }
+
+    // Заголовок
+    fprintf(f, "rank,frequency,term\n");
+
+    // Находим термины с наибольшей частотой
+    int max_freq = 0;
+    int total_terms = index->size;
+    
+    for (int i = 0; i < total_terms; i++) {
+        int current_max = 0;
+        int max_index = -1;
+        
+        for (int j = 0; j < total_terms; j++) {
+            if (index->terms[j].doc_frequency > current_max) {
+                current_max = index->terms[j].doc_frequency;
+                max_index = j;
+            }
+        }
+        
+        if (max_index >= 0 && current_max > 0) {
+            //printf("  %s: %d documents\n", index->terms[max_index].term, current_max);
+            fprintf(f, "%d,%d,%s\n", i+1, current_max, index->terms[max_index].term);
+            index->terms[max_index].doc_frequency *= -1; // Временно помечаем как использованный
+        }
+    }
+    
+    // Восстанавливаем частоты
+    for (int i = 0; i < total_terms; i++) {
+        if (index->terms[i].doc_frequency < 0) {
+            index->terms[i].doc_frequency *= -1;
+        }
+    }
+
+    fclose(f);
+    printf("CSV file written successfully.\n");
+}
+
 int main(int argc, char* argv[]) {
     // Устанавливаем локаль
     SetConsoleOutputCP(CP_UTF8);
@@ -185,7 +230,9 @@ int main(int argc, char* argv[]) {
     }
     
     // Индексируем документы из MongoDB
-    if (!index_mongo_documents(index, data_file)) {
+    int max_docs = 10000;
+    printf("Индексируем документы из mongoDB. Максимальное количество индексируемых документов=%d\n", max_docs);
+    if (!index_mongo_documents(index, data_file, max_docs)) {
         printf("Failed to index MongoDB documents\n");
         destroy_boolean_index(index);
         return 1;
@@ -218,6 +265,9 @@ int main(int argc, char* argv[]) {
     
     // Тестирование производительности
     test_performance(search);
+
+    // Сохранение частот токенов в файл 
+    tokens_to_file(index);
     
     // Сохранение индекса
     printf("\nSaving index to file...\n");

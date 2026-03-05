@@ -103,6 +103,7 @@ char* extract_text_from_html(const char* html) {
     return text;
 }
 
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Эта функция разбивает текст const char* text на токены (слова), которые затем записываются в char** tokens. Лимит количества токенов указывается в int max_tokens. Возвращает количество записанных токенов.
 int tokenize_mongo_document(const char* text, char** tokens, int max_tokens) {
     if (!text || !tokens || max_tokens <= 0) return 0;
@@ -118,19 +119,27 @@ int tokenize_mongo_document(const char* text, char** tokens, int max_tokens) {
         int len = strlen(token);
         if (len >= 2 && len <= 50) {
             // Проверяем, что токен содержит только буквы и цифры
+            /*
             int valid = 1;
             for (int i = 0; i < len; i++) {
                 if (!isalnum(token[i])) {
                     valid = 0;
+                    printf("invalid token:%s\n", token);
                     break;
                 }
             }
+            
             
             if (valid) {
                 tokens[token_count] = strdup_custom(token);
                 if (tokens[token_count]) {
                     token_count++;
                 }
+            }
+            */
+           tokens[token_count] = strdup_custom(token);
+            if (tokens[token_count]) {
+                token_count++;
             }
         }
         
@@ -142,7 +151,7 @@ int tokenize_mongo_document(const char* text, char** tokens, int max_tokens) {
 }
 
 // Эта функция индексации документов из файла с названием const char* filename. Она заполняет индекс BooleanIndex* index таким образом, чтобы он содержал все токены и id каждого документа из файла filename, где встречается токен. В случае успеха возвращает 1, а в случае неудачи - 0
-int index_mongo_documents(BooleanIndex* index, const char* filename) {
+int index_mongo_documents(BooleanIndex* index, const char* filename, int max_docs) {
     if (!index || !filename) return 0;
     
     printf("Loading documents from %s...\n", filename);
@@ -160,7 +169,7 @@ int index_mongo_documents(BooleanIndex* index, const char* filename) {
     int total_tokens = 0;
     int indexed_docs = 0;
     
-    for (int i = 0; i < doc_count; i++) {
+    for (int i = 0; (i < doc_count) && (i < max_docs); i++) {
         MongoDocument* doc = &documents[i];
         
         // Извлекаем текст из HTML

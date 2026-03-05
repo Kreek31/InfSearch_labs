@@ -28,7 +28,7 @@ typedef struct {
 
 int load_documents_from_mongo(MongoDocument** documents, int* count);
 int load_documents_from_file(const char* filename, MongoDocument** documents, int* count);
-int index_mongo_documents(BooleanIndex* index, const char* data_file);
+int index_mongo_documents(BooleanIndex* index, const char* data_file, int max_docs);
 void print_mongo_document(MongoDocument* doc);
 void cleanup_mongo_documents(MongoDocument* documents, int count);
 

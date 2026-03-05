@@ -217,7 +217,9 @@ PostingList* execute_query(BooleanSearch* search, BooleanQueryNode* node) {
             PostingList* left_result = execute_query(search, node->left);
             PostingList* right_result = execute_query(search, node->right);
             node->result = intersect_postings(left_result, right_result);
+            if (!(node->result)) return NULL;
             
+            /*Результаты потом будут очищены в destroy_query_tree()
             // Очищаем временные результаты
             if (left_result && left_result != node->result) {
                 destroy_posting_list(left_result);
@@ -225,7 +227,8 @@ PostingList* execute_query(BooleanSearch* search, BooleanQueryNode* node) {
             if (right_result && right_result != node->result) {
                 destroy_posting_list(right_result);
             }
-            
+            */
+
             return node->result;
         }
         
@@ -234,6 +237,7 @@ PostingList* execute_query(BooleanSearch* search, BooleanQueryNode* node) {
             PostingList* right_result = execute_query(search, node->right);
             node->result = union_postings(left_result, right_result);
             
+            /*Результаты потом будут очищены в destroy_query_tree()
             // Очищаем временные результаты
             if (left_result && left_result != node->result) {
                 destroy_posting_list(left_result);
@@ -241,7 +245,7 @@ PostingList* execute_query(BooleanSearch* search, BooleanQueryNode* node) {
             if (right_result && right_result != node->result) {
                 destroy_posting_list(right_result);
             }
-            
+            */
             return node->result;
         }
         
@@ -250,6 +254,7 @@ PostingList* execute_query(BooleanSearch* search, BooleanQueryNode* node) {
             PostingList* right_result = execute_query(search, node->right);
             node->result = difference_postings(left_result, right_result);
             
+            /*Результаты потом будут очищены в destroy_query_tree()
             // Очищаем временные результаты
             if (left_result && left_result != node->result) {
                 destroy_posting_list(left_result);
@@ -257,7 +262,7 @@ PostingList* execute_query(BooleanSearch* search, BooleanQueryNode* node) {
             if (right_result && right_result != node->result) {
                 destroy_posting_list(right_result);
             }
-            
+            */
             return node->result;
         }
         
@@ -346,7 +351,7 @@ BooleanQueryNode* parse_query_simple(const char* query_str) {
     }
     
     free(query_copy);
-    printf("node term:%s\n", root->term);
+    //printf("node term:%s\n", root->term);
     return root;
 }
 
@@ -360,6 +365,10 @@ SearchResult* search(BooleanSearch* search, const char* query_str) {
     
     // Выполняем запрос
     PostingList* postings = execute_query(search, query_tree);
+    if (!postings){
+        destroy_query_tree(query_tree);
+        return NULL;
+    }
     
     // Создаем результат
     SearchResult* result = malloc(sizeof(SearchResult));
